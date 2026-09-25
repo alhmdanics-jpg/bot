@@ -57,6 +57,7 @@ export default defineConfig({
         },
     },
     output: {
+        assetPrefix: '/bot/',
         copy: [
             {
                 from: 'node_modules/@deriv/deriv-charts/dist/*',
