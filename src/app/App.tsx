@@ -75,55 +75,99 @@ function App() {
         };
     }, []);
 
-    React.useEffect(() => {
-        const accounts_list = localStorage.getItem('accountsList');
-        const client_accounts = localStorage.getItem('clientAccounts');
-        const url_params = new URLSearchParams(window.location.search);
-        const account_currency = url_params.get('account');
-        const validCurrencies = [...fiat_currencies_display_order, ...crypto_currencies_display_order];
+        React.useEffect(() => {
+        const loadBotAuth = async () => {
+            try {
+                const response = await fetch('/api/bot-auth');
 
-        const is_valid_currency = account_currency && validCurrencies.includes(account_currency?.toUpperCase());
-
-        if (!accounts_list || !client_accounts) return;
-
-        try {
-            const parsed_accounts = JSON.parse(accounts_list);
-            const parsed_client_accounts = JSON.parse(client_accounts) as TAuthData['account_list'];
-
-            const updateLocalStorage = (token: string, loginid: string) => {
-                localStorage.setItem('authToken', token);
-                localStorage.setItem('active_loginid', loginid);
-            };
-
-            // Handle demo account
-            if (account_currency?.toUpperCase() === 'DEMO') {
-                const demo_account = Object.entries(parsed_accounts).find(([key]) => key.startsWith('VR'));
-
-                if (demo_account) {
-                    const [loginid, token] = demo_account;
-                    updateLocalStorage(String(token), loginid);
+                if (!response.ok) {
+                    console.warn('Bot authentication failed');
                     return;
                 }
-            }
 
-            // Handle real account with valid currency
-            if (account_currency?.toUpperCase() !== 'DEMO' && is_valid_currency) {
-                const real_account = Object.entries(parsed_client_accounts).find(
-                    ([loginid, account]) =>
-                        !loginid.startsWith('VR') && account.currency.toUpperCase() === account_currency?.toUpperCase()
+                const tokens = await response.json();
+
+                const accountsList: Record<string, string> = {};
+                const clientAccounts: Record<
+                    string,
+                    { loginid: string; token: string; currency: string }
+                > = {};
+
+                for (let i = 1; i <= 3; i++) {
+                    const loginid = tokens[`acct${i}`];
+                    const token = tokens[`token${i}`];
+                    const currency = tokens[`cur${i}`] || '';
+
+                    if (loginid && token) {
+                        accountsList[loginid] = token;
+
+                        clientAccounts[loginid] = {
+                            loginid,
+                            token,
+                            currency,
+                        };
+                    }
+                }
+
+                localStorage.setItem(
+                    'accountsList',
+                    JSON.stringify(accountsList)
                 );
 
-                if (real_account) {
-                    const [loginid, account] = real_account;
-                    if ('token' in account) {
-                        updateLocalStorage(String(account?.token), loginid);
-                    }
-                    return;
+                localStorage.setItem(
+                    'clientAccounts',
+                    JSON.stringify(clientAccounts)
+                );
+
+                const accountCurrency =
+                    new URLSearchParams(window.location.search)
+                        .get('account')
+                        ?.toUpperCase();
+
+                let selectedAccount:
+                    | {
+                          loginid: string;
+                          token: string;
+                          currency: string;
+                      }
+                    | undefined;
+
+                if (accountCurrency === 'DEMO') {
+                    selectedAccount = Object.values(clientAccounts).find(
+                        account => account.loginid.startsWith('VR')
+                    );
+                } else if (accountCurrency) {
+                    selectedAccount = Object.values(clientAccounts).find(
+                        account =>
+                            !account.loginid.startsWith('VR') &&
+                            account.currency.toUpperCase() === accountCurrency
+                    );
                 }
+
+                if (!selectedAccount) {
+                    selectedAccount = Object.values(clientAccounts)[0];
+                }
+
+                if (selectedAccount) {
+                    localStorage.setItem(
+                        'authToken',
+                        selectedAccount.token
+                    );
+
+                    localStorage.setItem(
+                        'active_loginid',
+                        selectedAccount.loginid
+                    );
+                }
+            } catch (error) {
+                console.warn(
+                    'Bot authentication error',
+                    error
+                );
             }
-        } catch (e) {
-            console.warn('Error', e); // eslint-disable-line no-console
-        }
+        };
+
+        loadBotAuth();
     }, []);
 
     return <RouterProvider router={router} />;
