@@ -7,6 +7,7 @@ import RoutePromptDialog from '@/components/route-prompt-dialog';
 import { crypto_currencies_display_order, fiat_currencies_display_order } from '@/components/shared';
 import { useOfflineDetection } from '@/hooks/useOfflineDetection';
 import { api_base } from '@/external/bot-skeleton';
+import { requestOidcAuthentication } from '@deriv-com/auth-client';
 import { StoreProvider } from '@/hooks/useStore';
 import CallbackPage from '@/pages/callback';
 import Endpoint from '@/pages/endpoint';
