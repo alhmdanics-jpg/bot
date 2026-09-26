@@ -6,6 +6,7 @@ import ChunkLoader from '@/components/loader/chunk-loader';
 import RoutePromptDialog from '@/components/route-prompt-dialog';
 import { crypto_currencies_display_order, fiat_currencies_display_order } from '@/components/shared';
 import { useOfflineDetection } from '@/hooks/useOfflineDetection';
+import { api_base } from '@/external/bot-skeleton';
 import { StoreProvider } from '@/hooks/useStore';
 import CallbackPage from '@/pages/callback';
 import Endpoint from '@/pages/endpoint';
@@ -161,6 +162,7 @@ function App() {
                         'active_loginid',
                         selectedAccount.loginid
                     );
+                    await api_base.init(true);
                 }
             } catch (error) {
                 console.warn(
