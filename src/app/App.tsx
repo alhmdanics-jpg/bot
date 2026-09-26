@@ -56,7 +56,10 @@ const router = createBrowserRouter(
             <Route path='endpoint' element={<Endpoint />} />
             <Route path='callback' element={<CallbackPage />} />
         </Route>
-    )
+    ),
+{
+    basename: '/bot',
+}
 );
 
 function App() {
